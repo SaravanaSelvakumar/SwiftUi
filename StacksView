@@ -1,0 +1,101 @@
+import SwiftUI
+
+struct ContentView: View {
+    @State private var isSkipActive = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
+                
+                VStack {
+                    Text("choose your plan".capitalized)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                    
+                    HStack{
+                        PlanView(title: "silver", price: "10", fontColor: .black, bgColor: .white)
+                        PlanView(title: "gold", price: "20", fontColor: .black, bgColor: .yellow)
+                    }
+                    PlanView(title: "platinum", price: "30", fontColor: .white, bgColor: .gray)
+                    PlanBtnView(title: "Subscribe" ,Color: .blue, topPadding: 100, action: {
+                        
+                    })
+                    PlanBtnView(title: "Skip" ,Color: .red, topPadding: 20, action: {
+                        isSkipActive = true
+                    })
+                    NavigationLink(destination: PalnDetailsView(), isActive: $isSkipActive) {
+                        EmptyView()
+                    }
+                    .hidden()
+                }
+            }
+        }
+    }
+}
+
+
+#Preview {
+    ContentView()
+}
+
+
+
+
+struct PlanView: View {
+    var title = ""
+    var price = ""
+    var fontColor: Color
+    var bgColor: Color
+    
+    
+    var body: some View {
+        VStack {
+            Text(title.capitalized)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundStyle(fontColor)
+            Spacer().frame(height: 10)
+            Text("$\(price)")
+                .font(.title)
+                .fontWeight(.medium)
+                .foregroundStyle(fontColor)
+            Text("per month".capitalized)
+                .font(.title)
+                .fontWeight(.medium)
+                .foregroundStyle(fontColor)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100)
+        .padding()
+        .background(bgColor)
+        .cornerRadius(12)
+    }
+}
+
+
+struct PlanBtnView: View {
+    var title = ""
+    var Color: Color
+    var topPadding: CGFloat
+    var action: () -> Void
+    
+    
+    var body: some View {
+        
+        Button (action: action) {
+            Text(title.capitalized)
+                .padding()
+                .font(.largeTitle)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity,minHeight: 70)
+                .background(Color)
+                .cornerRadius(20)
+                .shadow(radius: 20)
+        }
+        .padding(.top, topPadding)
+        .padding(.horizontal)
+    }
+}
