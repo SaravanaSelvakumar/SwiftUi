@@ -1,0 +1,71 @@
+import SwiftUI
+import ShimmeringUiView
+
+struct CMP0007View: View {
+    
+    // List of image names
+    private let products = ["cafe-2", "cafe-3", "cafe-14", "cafe-1", "cafe-2"]
+    var backGround = "FFFFFF"
+      
+    let columns = [
+        GridItem(.flexible()),
+    ]
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHGrid(rows: columns, spacing: 20) {
+                ForEach(products, id: \.self) { product in
+                    CardBanner(imageName: product)
+                }
+            }
+            .padding([.leading, .trailing], 10)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: backGround))
+    }
+}
+
+struct CardBanner: View {
+    var imageName: String
+     @State private var isActive = true
+    
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 290, height: 200)
+                .cornerRadius(20)
+                .clipped()
+            
+            Button(action: {
+                print("Shop Now button tapped for \(imageName)")
+            }) {
+                Text("Shop Now")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 15)
+                    .background(Color.black)
+                    .cornerRadius(10)
+            }
+            .padding([.bottom, .leading], 20)
+        }
+        .frame(width: 280, height: 250)
+        .shimmering(
+            active: isActive,
+            animation: .linear(duration: 4.0).repeatForever(autoreverses: false),
+            gradient:   Gradient(colors: [.gray.opacity(0.2), .gray.opacity(0.4), .gray.opacity(0.2),]),
+            bandSize: 0.2
+        )
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                isActive = false
+            }
+        }
+    }
+}
+
+#Preview {
+    CMP0007View()
+}
