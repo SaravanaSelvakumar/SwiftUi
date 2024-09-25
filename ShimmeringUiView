@@ -1,0 +1,107 @@
+import SwiftUI
+import ShimmeringUiView
+
+struct CMP0006View: View {
+    
+    private let products = [
+        ("Keyboard", "keyboard"),
+        ("Desktop", "desktopcomputer"),
+        ("Printer", "printer.fill"),
+        ("HeadPhone", "headphones"),
+        ("Monitor", "display"),
+        ("Speaker", "speaker.fill"),
+        ("Camera", "camera.fill"),
+    ]
+    
+    var storeHeader = "Shop by Store"
+    var backGround = "FFFFFF"
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(storeHeader)
+                .font(.title)
+                .fontWeight(.bold)
+                .padding([.top, .leading], 20)
+            
+            // First row with 3 columns
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 20) {
+                ForEach(products.prefix(3), id: \.0) { product in
+                    ShopByStore(categoryName: product.0, imageName: product.1)
+                }
+            }
+            .padding([.leading, .trailing], 20)
+            
+            // Second row with 4 columns
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 20) {
+                ForEach(products.dropFirst(3), id: \.0) { product in
+                    ShopByStore(categoryName: product.0, imageName: product.1)
+                }
+            }
+            .padding([.leading, .trailing], 20)
+            Spacer()
+                .frame(height: 20)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: backGround))
+    }
+}
+
+// Reusable component for each category item
+struct ShopByStore: View {
+    var categoryName: String
+    var imageName: String
+    @State private var shimmerActive = true
+    
+    var body: some View {
+        VStack {
+            ZStack {
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color(hex: "A6F0E3"))
+                    .aspectRatio(1, contentMode: .fit)
+                
+                // Use system images for product icons
+                Image(systemName: imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(20)
+                    .foregroundColor(.black)
+            }
+            
+            Text(categoryName)
+                .font(.system(size: 16, weight: .medium))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .lineLimit(2)
+                .minimumScaleFactor(0.5)
+        }
+        .padding(.horizontal, 5)
+        .shimmering(
+            active: shimmerActive,
+            animation: .linear(duration: 3.0).repeatForever(autoreverses: false),
+            gradient: Gradient(colors: [.gray.opacity(0.2), .gray.opacity(0.4), .gray.opacity(0.2)]),
+            bandSize: 0.2
+        )
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                shimmerActive = false
+            }
+        }
+    }
+}
+
+#Preview {
+    CMP0006View()
+}
+
+
+//***************************************************************************//
+
+/*
+need to import the package to use shimmeringview
+url: https://github.com/Ninise/swiftui-shimmeringview.git
+*/
+
+
+//***************************************************************************//
+
+
