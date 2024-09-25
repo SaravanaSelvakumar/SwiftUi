@@ -4,11 +4,11 @@ struct CMP0009View: View {
     
     // Product array with image names and pricing details
     private var product = [
-        ("coffee-1", "₹176", "₹199", "11% OFF"),
-        ("coffee-14", "₹99", "₹120", "15% OFF"),
-        ("coffee-10", "₹649", "₹1,799", "63% OFF"),
-        ("coffee-15", "₹299", "₹499", "40% OFF"),
-        ("coffee-6", "₹899", "₹1,299", "31% OFF")
+        ("photo", "₹176", "₹199", "11% OFF"),
+        ("photo", "₹99", "₹120", "15% OFF"),
+        ("photo", "₹649", "₹1,799", "63% OFF"),
+        ("photo", "₹299", "₹499", "40% OFF"),
+        ("photo", "₹899", "₹1,299", "31% OFF")
     ]
     
     var backGround = "FFFFFF"
@@ -55,7 +55,7 @@ struct ProductView: View {
                     .frame(width: 150, height: 200)
                     .shadow(radius: 1)
                 
-                Image(productImage)
+                Image(systemName: productImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 150, height: 200)
