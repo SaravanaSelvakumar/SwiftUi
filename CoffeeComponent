@@ -1,0 +1,148 @@
+import SwiftUI
+
+struct CMP0009View: View {
+    
+    // Product array with image names and pricing details
+    private var product = [
+        ("coffee-1", "₹176", "₹199", "11% OFF"),
+        ("coffee-14", "₹99", "₹120", "15% OFF"),
+        ("coffee-10", "₹649", "₹1,799", "63% OFF"),
+        ("coffee-15", "₹299", "₹499", "40% OFF"),
+        ("coffee-6", "₹899", "₹1,299", "31% OFF")
+    ]
+    
+    var backGround = "FFFFFF"
+    
+    let columns = [
+        GridItem(.flexible()),
+    ]
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHGrid(rows: columns, spacing: 5) {
+                ForEach(product, id: \.0) { productItem in
+                    ProductView(
+                        productImage: productItem.0,
+                        productName: "Colombian Brew Coffee",
+                        productType: "coffee machine",
+                        price: productItem.1,
+                        originalPrice: productItem.2,
+                        discount: productItem.3
+                    )
+                }
+                .padding(.leading, 5)
+            }
+        }
+        .padding(.vertical, 15)
+        .background(Color(hex: backGround))
+    }
+}
+
+// Reusable component for each product item
+struct ProductView: View {
+    let productImage: String
+    let productName: String
+    let productType: String
+    let price: String
+    let originalPrice: String
+    let discount: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack(alignment: .bottomTrailing) {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(hex: "F8F9FD"))
+                    .frame(width: 150, height: 200)
+                    .shadow(radius: 1)
+                
+                Image(productImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 150, height: 200)
+                    .cornerRadius(10)
+                
+                Button(action: {
+                    print("ADD button tapped for \(productName)")
+                }) {
+                    Text("ADD")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color(hex: "28AA7E"))
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 10)
+                        .background(Color.white)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.green, lineWidth: 2)
+                        )
+                }
+                .padding([.bottom, .trailing], -10)
+            }
+            .frame(width: 150, height: 200)
+            
+            Text(productType)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(Color(hex: "2D2B2E"))
+                .padding(.vertical, 10)
+                .padding(.horizontal, 10)
+                .background(Color(hex: "F5ECFF"))
+                .cornerRadius(10)
+                .frame(width: 150, alignment: .leading)
+                .padding(.top)
+            
+            Text(productName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color(hex: "2D2B2E"))
+                .frame(width: 150, alignment: .leading)
+                .lineLimit(3)
+                .padding(.vertical,2)
+            
+            Text(discount)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.blue)
+            
+            HStack {
+                Text(price)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+                
+                Text("MRP ")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray) +
+                Text(originalPrice)
+                    .font(.system(size: 12))
+                    .strikethrough()
+                    .foregroundColor(.gray)
+            }
+            
+            Button(action: {
+                print("See More Like this tapped for \(productName)")
+            }) {
+                Text("See More Like this")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(hex: "336A27"))
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background(Color(hex: "E6F2E8"))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.green, lineWidth: 2)
+                    )
+            }
+        }
+        .padding()
+        .background(Color(hex: "FFFFFF"))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color(hex: "D3D3D3"), lineWidth: 1)
+        )
+    }
+}
+
+// Preview the view
+#Preview {
+   
+    CMP0009View()
+}
