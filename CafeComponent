@@ -4,7 +4,7 @@ import ShimmeringUiView
 struct CMP0007View: View {
     
     // List of image names
-    private let products = ["cafe-2", "cafe-3", "cafe-14", "cafe-1", "cafe-2"]
+    private let products = ["photo", "photo", "photo", "photo", "photo"]
     var backGround = "FFFFFF"
       
     let columns = [
@@ -31,7 +31,7 @@ struct CardBanner: View {
     
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Image(imageName)
+            Image(systemName: imageName)
                 .resizable()
                 .scaledToFill()
                 .frame(width: 290, height: 200)
