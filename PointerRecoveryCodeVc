@@ -1,0 +1,125 @@
+//
+//  RecoveryCodeVc.swift
+//  pointerup-customer
+//
+//  Created by apzzo on 07/10/24.
+//
+
+import SwiftUI
+
+struct RecoveryCodeVc: View {
+    var isRecoveryCode = true
+    let recoveryCodeTitle = "You can enter one of your recovery codes in case you lost access to your mobile device."
+    let authenticationTitle = "You can enter one of your recovery codes in case you lost access to your mobile device."
+    
+    var body: some View {
+        
+        ZStack{
+            SignInReuseView(authenticationTitle: "Two-factor \nauthentication", loginDescription: isRecoveryCode ? recoveryCodeTitle : authenticationTitle)
+            
+            VStack{
+                RecoveryCodeReuseView()
+                    .padding(.top, 30)
+                authenticationReuseView()
+                    .padding(.top, 20)
+            }
+        }
+        
+    }
+}
+
+#Preview {
+    RecoveryCodeVc()
+}
+
+struct authenticationReuseView: View {
+    let recoverycode = "Use your two-factor authentication app"
+    let Authentication = "Use one of your backup codes"
+    
+    var body: some View {
+        
+        VStack (alignment: .leading, spacing: 15){
+            Text("Having problem?")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(hex: "212B36"))
+            
+            Button(action: {
+                print("Verify")
+            }) {
+                Text(recoverycode)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(Color(hex: "212B36"))
+                    .underline()
+            }
+            
+            Button(action: {
+                print("Verify")
+            }) {
+                Text("Can’t access your verification or recovery methods?")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(Color(hex: "212B36"))
+                    .underline()
+            }
+            
+        }
+        
+    }
+}
+
+
+struct RecoveryCodeReuseView: View {
+    @State private var recoveryCode: String = ""
+    let recoveryHeader = "Recovery code"
+    let AuthenticationHeader = "Authentication code"
+    
+    var body: some View {
+        
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .foregroundColor(.white)
+                .padding(.horizontal, 25)
+                .frame(height: 200)
+            
+            
+            VStack {
+                VStack(alignment: .leading) {
+                    
+                    Text(recoveryHeader)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color(hex: "6C7278"))
+                        .padding(.horizontal, 33)
+                    
+                    TextField("Ex: 234312", text: $recoveryCode)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal)
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color(hex: "6C7278").opacity(0.5), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 30)
+                    
+                }
+                .padding(.top, 10)
+                .padding(.bottom)
+                
+                Button(action: {
+                    print("Verify")
+                }) {
+                    Text("Verify")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(14)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(hex: "31AD83"))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal, 30)
+            }
+            .padding(.horizontal, 25)
+        }
+        .shadow(radius: 0.2)
+    }
+}
+
+
