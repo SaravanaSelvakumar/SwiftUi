@@ -1,0 +1,170 @@
+//
+//  AdminTabbar.swift
+//  pointerup-customer
+//
+//  Created by apzzo on 08/10/24.
+//
+
+import SwiftUI
+
+struct SignInVc: View {
+    
+    var body: some View {
+        NavigationView {
+            VStack{
+                AdminLogoView()
+                LoginReuseView()
+                    .padding(.top, -45)
+                    .padding(.bottom, 40)
+                TextFiledView()
+                Spacer()
+            }
+            .navigationBarHidden(true)
+        }
+    }
+}
+
+#Preview {
+    AdminTabbar()
+}
+
+struct AdminLogoView: View {
+    var body: some View {
+        ZStack{
+            Image("LoginBg")
+                .resizable()
+                .scaledToFill()
+                .frame(height: 240)
+                .clipped()
+                .ignoresSafeArea(edges: .top)
+            
+            
+            Image("pointerLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 70)
+                .padding(.bottom, 120)
+        }
+    }
+}
+
+struct LoginReuseView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16){
+            Text("Login")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(Color(hex: "222222"))
+                .padding(.leading)
+            
+            Text("Hello, you must login first to be able to use the StoreXplore and enjoy all the eCommerce Mobile App demos.")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(Color(hex: "5E5E5E"))
+                .padding(.horizontal)
+        }
+    }
+}
+
+struct TextFiledView: View {
+    @State private var email: String = ""
+    @State private var password: String = ""
+    @State private var isPasswordVisible: Bool = false
+    
+    var body: some View {
+        VStack {
+            VStack(alignment: .leading) {
+                
+                Text("Email")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color(hex: "6C7278"))
+                    .padding(.horizontal, 33)
+                
+                TextField("Email", text: $email)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color(hex: "6C7278").opacity(0.5), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 30)
+            }
+            .padding(.bottom)
+            
+            
+            VStack(alignment: .leading) {
+                Text("Password")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color(hex: "6C7278"))
+                    .padding(.horizontal, 33)
+                
+                ZStack {
+                    if isPasswordVisible {
+                        TextField("Password", text: $password)
+                    } else {
+                        SecureField("Password", text: $password)
+                    }
+                    
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            isPasswordVisible.toggle()
+                        }) {
+                            Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
+                                .foregroundColor(Color.gray)
+                        }
+                        .padding(.trailing, 10)
+                    }
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "6C7278").opacity(0.5), lineWidth: 1)
+                )
+                .padding(.horizontal, 30)
+            }
+            
+            HStack {
+                Spacer()
+                Button(action: {
+                    print("Forgot Password cliked")
+                }) {
+                    Text("Forgot Password?")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(hex: "4D81E7"))
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 10)
+            .padding(.bottom, 3)
+            
+            NavigationLink(destination: RecoveryCodeVc()) {
+                Text("Log In")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color(hex: "31AD83"))
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal, 30)
+            
+            
+            HStack {
+                Text("Don’t have an account?")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(hex: "6C7278"))
+                Button(action: {
+                    print("Contact Admin cliked")
+                }) {
+                    Text("Sign Up")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(hex: "4D81E7"))
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.top)
+        }
+    }
+}
