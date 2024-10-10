@@ -1,0 +1,92 @@
+import SwiftUI
+
+struct HomeVC : View {
+    let filterData: [String] = ["Mobile App", "Today"]
+    let sampleData: [DataItem] = [
+        DataItem(title: "Visits", value: "1,029"),
+        DataItem(title: "Signups", value: "2,348"),
+        DataItem(title: "Orders", value: "3,456"),
+        DataItem(title: "Sales", value: "4,987"),
+        DataItem(title: "iOS Installs", value: "5,123"),
+        DataItem(title: "Android Installs", value: "6,789")
+    ]
+    @State private var showModal: Bool = false
+    
+    var body: some View {
+        let columns = [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
+        
+        NavigationView {
+            VStack(spacing: 0){
+                StoreHeaderView()
+                
+                // Filter Buttons
+                HStack {
+                    CustomButton(filterData: filterData[0], action: {
+                        showModal = true
+                    })
+                    CustomButton(filterData: filterData[1], action: {
+                        showModal = true
+                    })
+                }
+                .padding(.vertical, 20)
+                .background(Color.white)
+                
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(hex: "8D8D8D").opacity(0.5))
+                                
+                // Filtered Data
+                LazyVGrid(columns: columns, spacing: 15) {
+                    ForEach(sampleData, id: \.title) { item in
+                        dataView(title: item.title, value: item.value)
+                    }
+                }
+                .padding(.horizontal, 10)
+                
+                Spacer()
+            }
+            .background(Color(hex: "F6F8FA"))
+            .sheet(isPresented: $showModal) {
+                ModalView()
+            }
+        }
+    }
+}
+
+#Preview {
+    HomeVC()
+}
+
+struct StoreHeaderView: View {
+    @State private var showStoreVC: Bool = false
+
+    var body: some View {
+        NavigationLink(destination: StoreVC(), isActive: $showStoreVC) {
+            HStack {
+                Spacer()
+                Text("RMK Store")
+                    .font(.custom("Inter-Medium", size: DeviceType(rawValue: DEVICE)?.title2FontSize ?? 0))
+                    .foregroundColor(.white)
+                    .padding(.bottom, 10)
+                
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.leading, 5)
+                    .padding(.bottom, 4)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, minHeight: 60)
+            .background(Color(hex: "183646"))
+            .contentShape(Rectangle()) // Ensure the whole area is tappable
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    showStoreVC = true
+                }
+            }
+        }
+    }
+}
