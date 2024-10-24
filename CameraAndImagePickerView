@@ -1,0 +1,272 @@
+import SwiftUI
+import UIKit
+import AVFoundation
+
+
+struct ProfileView: View {
+    @State private var name: String = ""
+    @State private var email: String = ""
+    @State private var mobileNumber: String = ""
+    
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage? = nil
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showActionSheet = false
+    @State private var showPermissionAlert = false
+    @FocusState private var focusedField: SignUpTextField?
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack {
+                    Spacer()
+                    ProfilePhoto(selectedImage: selectedImage, cameraAction: {
+                        showActionSheet = true
+                    })
+                    .frame(maxWidth: .infinity, maxHeight: 200)
+                    .padding(.vertical, 30)
+                    
+                    VStack(spacing: 20) {
+                        /// Name Text field
+                        ProfileTextField(title: "Name", textField: "Enter your name", keyboardType: .alphabet, email: $name)
+                            .submitLabel(.next)
+                            .focused($focusedField, equals: .name)
+                            .onSubmit {
+                                focusedField = .email
+                            }
+                        
+                        /// Email Text field
+                        ProfileTextField(title: "Email", textField: "Enter your email addresss", keyboardType: .emailAddress, email: $email)
+                            .padding(.top, 8)
+                            .submitLabel(.next)
+                            .focused($focusedField, equals: .email)
+                            .onSubmit {
+                                focusedField = .mobileNumber
+                            }
+                        
+                        /// Phone number Text field
+                        ProfileTextField(title: "Phone Number", textField: "Enter your phone number", keyboardType: .numberPad, email: $mobileNumber)
+                            .padding(.top, 8)
+                            .submitLabel(.done)
+                            .focused($focusedField, equals: .mobileNumber)
+                            .onChange(of: mobileNumber) { newValue in
+                                let filtered = newValue.filter { $0.isNumber }
+                                if filtered.count > 10 {
+                                    mobileNumber = String(filtered.prefix(10))
+                                } else {
+                                    mobileNumber = filtered
+                                }
+                            }
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("Done") {
+                                        focusedField = nil
+                                    }
+                                }
+                            }
+                        
+                    } /// End of TextfFiled
+                    
+                    Spacer()
+                }
+            }
+            .actionSheet(isPresented: $showActionSheet) {
+                ActionSheet(
+                    title: Text("Select an option"),
+                    message: Text("Choose a source"),
+                    buttons: [
+                        .default(Text("Camera")) {
+                            ImagePicker.checkCameraPermission { granted in
+                                if granted {
+                                    sourceType = .camera
+                                    showImagePicker = true
+                                } else {
+                                    showPermissionAlert = true
+                                }
+                            }
+                        },
+                        .default(Text("Photo Library")) {
+                            sourceType = .photoLibrary
+                            showImagePicker = true
+                        },
+                        .cancel()
+                    ]
+                )
+            }
+            .fullScreenCover(isPresented: $showImagePicker) {
+                ImagePicker(selectedImage: $selectedImage, sourceType: sourceType, showPermissionAlert: $showPermissionAlert)
+            }
+            .alert(isPresented: $showPermissionAlert) {
+                Alert(
+                    title: Text("Camera Access Needed"),
+                    message: Text("Please allow camera access in settings to take photos."),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+            .navigationBarTitle("Profile", displayMode: .inline)
+            
+            /// Custom back button
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "chevron.backward")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.leading, 5)
+                    .padding(.bottom, 2)
+                }
+            }
+            .navigationBarBackButtonHidden(true)
+            .onAppear {
+                setNavigationBarColor()
+            }
+        }
+    }
+}
+
+#Preview {
+    ProfileView()
+}
+
+struct ProfileTextField: View {
+    let title: String
+    var textField: String
+    var keyboardType: UIKeyboardType
+    @Binding var email: String
+    var body: some View {
+        VStack(alignment: .leading) {
+            
+            Text(title)
+                .font(.custom("Inter-Medium", size: DeviceType(rawValue: DEVICE)!.smallFontSize))
+                .foregroundStyle(Color(hex: "787878"))
+                .padding(.horizontal, 33)
+                .padding(.bottom, 3)
+            
+            TextField(textField, text: $email)
+                .keyboardType(keyboardType)
+                .autocapitalization(.none)
+                .autocorrectionDisabled()
+                .padding(.vertical, 10)
+                .padding(.horizontal)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "6C7278").opacity(0.5), lineWidth: 1)
+                        .background(Color.white.cornerRadius(10))
+                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 3)
+                )
+                .padding(.horizontal, 30)
+        }
+        
+    }
+}
+
+
+struct ProfilePhoto: View {
+    var selectedImage: UIImage?
+    var cameraAction: () -> Void
+    
+    var body: some View {
+        ZStack {
+            if let uiImage = selectedImage {
+                /// Display the selected image if available
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 138, height: 138)
+                    .clipShape(Circle())
+            } else {
+                Image("profilePic")
+                    .resizable()
+                    .scaledToFill()
+                    .foregroundStyle(Color(hex: "DADADA"))
+                    .frame(width: 138, height: 138)
+                    .clipShape(Circle())
+            }
+            
+        }
+        .overlay(
+            Button(action: {
+                cameraAction()
+            }) {
+                Image("cam_Icon")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(Color(hex: "28AA7E"))
+                    .frame(width: 36, height: 36)
+                    .padding(.bottom, 8)
+                    .padding(.trailing, 6)
+            },
+            alignment: .bottomTrailing
+        )
+    }
+}
+
+struct ImagePicker: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+    var sourceType: UIImagePickerController.SourceType
+    @Binding var showPermissionAlert: Bool
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = sourceType
+        picker.allowsEditing = true
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        var parent: ImagePicker
+        
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let editedImage = info[.editedImage] as? UIImage {
+                parent.selectedImage = editedImage
+            } else if let originalImage = info[.originalImage] as? UIImage {
+                parent.selectedImage = originalImage
+            }
+            picker.dismiss(animated: true)
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+    }
+    
+    /// Function to check camera permission and handle access
+    static func checkCameraPermission(completion: @escaping (Bool) -> Void) {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        
+        switch status {
+        case .notDetermined:
+            /// Request access
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    completion(granted)
+                }
+            }
+        case .restricted, .denied:
+            /// Access denied
+            completion(false)
+        case .authorized:
+            /// Access granted
+            completion(true)
+        @unknown default:
+            completion(false)
+        }
+    }
+}
+
