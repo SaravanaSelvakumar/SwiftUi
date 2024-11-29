@@ -1,0 +1,187 @@
+import SwiftUI
+import Observation
+
+@Observable
+class VersionViewModel {
+    var versionsArray = [VersionsData]()
+    var alertViewModel = AlertViewModel()
+    var page = 1
+    var limit = 30
+    var isLast = false
+    var isApiCall = false
+    
+    func loadMoreData() {
+        if !isLast && !isApiCall && !versionsArray.isEmpty {
+            page += 1
+            fetchVersions()
+        }
+    }
+  
+    func fetchVersions() {
+        isApiCall = true
+        let param = [
+            "filter": [
+                "deleted": false,
+                "storeId": CustomUserDefaults.DefaultStoreId ?? ""
+            ],
+            "sortType": "asc",
+            "page": page,
+            "limit": limit
+        ] as [String : Any]
+        DataManager.sharedInstance().fetchVersions(parameter: param) { error,response in
+            DispatchQueue.main.async {[self] in
+                isApiCall = false
+                if let error = error  {
+                    alertViewModel.displayAlert(message: error.localizedDescription)
+                    print(error)
+                }  else if let fetchedData = response?.data {
+                    if page == 1 {
+                        versionsArray = fetchedData
+                    } else {
+                        versionsArray.insert(contentsOf: fetchedData, at: 0)
+                    }
+                    isLast = fetchedData.count < limit
+                }
+            }
+        }
+    }
+}
+
+import SwiftUI
+
+struct VersionsVC : View {
+    @State var versionViewModel = VersionViewModel()
+    @EnvironmentObject var alertModel: AlertViewModel
+    
+    var body: some View {
+        
+        VStack(spacing: 0) {
+            ScrollView(showsIndicators: false) {
+                
+                GeometryReader { geo in
+                    Color.clear
+                        .onChange(of: geo.frame(in: .named("ScrollView")).minY) { position in
+                            if position >= 50 {
+                                versionViewModel.loadMoreData()
+                            }
+                        }
+                }
+                
+                if versionViewModel.versionsArray.isEmpty {
+                    VStack(alignment: .center) {
+                        Image("NoOrdersFound")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width:220 , height:180)
+                        
+                        Text("No version model found!")
+                            .frame(maxWidth: .infinity)
+                            .font(.custom("Inter-SemiBold", size: DeviceType(rawValue: DEVICE)!.extraMediumFontSize))
+                            .foregroundStyle(Color(hex: "252B42"))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 50)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(versionViewModel.versionsArray.enumerated()), id: \.element.id) { index, versionData in
+                            VersionReuseView(
+                                versionData: versionData,
+                                divider: index != versionViewModel.versionsArray.count - 1
+                            )
+                        }
+                    }
+                }
+            }
+            .background(Color(hex: "F6F8FA"))
+        }
+        .onAppear {
+            versionViewModel.alertViewModel = alertModel
+            versionViewModel.fetchVersions()
+        }
+        .alert(isPresented: $versionViewModel.alertViewModel.showAlert) {
+            Alert(
+                title: Text(versionViewModel.alertViewModel.alertTitle),
+                message: Text(versionViewModel.alertViewModel.alertMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+}
+
+struct VersionReuseView : View {
+    @Bindable var versionData: VersionsData
+    var divider: Bool
+    
+    var body: some View {
+        
+        VStack(alignment: .leading, spacing: 0)  {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("v\(versionData.name)")
+                        .font(.custom("Inter-SemiBold", size: DeviceType(rawValue: DEVICE)!.extraMediumFontSize))
+                        .foregroundStyle(Color(hex: "252B42"))
+                    
+                    if let formattedDate = DateUtils.formattedDate(from: versionData.updatedAt) {
+                        Text("Updated on \(formattedDate)")
+                            .font(.custom("Inter-Medium", size: DeviceType(rawValue: DEVICE)!.smallFontSize))
+                            .foregroundStyle(Color(hex: "666666"))
+                            .padding(.bottom, 3)
+                    }
+                }
+                
+                Spacer()
+                
+                VStack {
+                    Text(versionData.status)
+                        .font(.custom("Inter-Medium", size: DeviceType(rawValue: DEVICE)!.microFontSize))
+                        .foregroundColor(statusTextColor(status: versionData.status))
+                        .foregroundStyle(Color(hex: "8A34A8"))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .foregroundStyle(statusBackgroundColor(status: versionData.status))
+                        )
+                    Spacer()
+                }
+                
+            }
+            .padding(.vertical)
+            
+            if divider {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(hex: "8D8D8D").opacity(0.3))
+            }
+        }
+        .padding(.horizontal, 16)
+        .background(.white)
+    }
+    
+    private func statusTextColor(status: String) -> Color {
+        switch status.lowercased() {
+        case "draft":
+            return Color(hex: "8A34A8")
+        case "live":
+            return Color(hex: "05A143")
+        case "archive":
+            return Color(hex: "E55325")
+        default:
+            return Color.white
+        }
+    }
+    
+    private func statusBackgroundColor(status: String) -> Color {
+        switch status.lowercased() {
+        case "draft":
+            return Color(hex: "8A34A8").opacity(0.2)
+        case "live":
+            return Color(hex: "05A143").opacity(0.2)
+        case "archive":
+            return Color(hex: "E55325").opacity(0.2)
+        default:
+            return Color.black  .opacity(0.2)
+        }
+    }
+}
+
