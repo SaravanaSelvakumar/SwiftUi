@@ -1,0 +1,94 @@
+import SwiftUI
+import Combine
+
+class AlertViewModel: ObservableObject {
+    @Published var showAlert: Bool = false
+    @Published var alertMessage: String = ""
+    @Published var alertTitle: LocalizedStringKey = ""
+    
+    func displayAlert(title: LocalizedStringKey = "Alert", message: String) {
+        alertTitle = title
+        alertMessage = message
+        showAlert = true
+    }
+}
+
+
+struct FormateVC: View {
+    @Environment(\.presentationMode) var presentationMode
+    @State private var selectedDateFormat: String = "DD-MM-YYYY"
+    @State private var selectedTimeFormat: String = "24 Hours"
+    let timeFormats = ["24-Hours", "12-Hours"]
+    @EnvironmentObject var alertViewModel: AlertViewModel
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 10) {
+                
+                PickerReuseView(selectedFormat: $selectedDateFormat, title: "Date Format", formats: dateFormats)
+                
+                PickerReuseView(selectedFormat: $selectedTimeFormat, title: "Time Format", formats: timeFormats)
+                
+                Spacer()
+            }
+            .padding(.top, 30)
+            .navigationBarTitle("Formate", displayMode: .inline)
+            .navigationBarBackButtonHidden(true)
+            /// Custom back button and save button
+            .toolbar {
+                /// Back button on the Left side
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "chevron.backward")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.bottom, 2)
+                }
+                
+                /// Save button on the right side
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        alertViewModel.displayAlert(title: "Success", message: "Your changes has been updated successfully")
+                    }) {
+                        Text("Save")
+                            .font(.custom("Inter-Medium", size: DeviceType(rawValue: DEVICE)!.extraMedium1FontSize))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .alert(isPresented: $alertViewModel.showAlert) {
+                Alert(
+                    title: Text(alertViewModel.alertTitle),
+                    message: Text(alertViewModel.alertMessage),
+                    dismissButton: .default(Text("OK"))
+                    {
+                        if alertViewModel.alertTitle == "Success" {
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    })
+            }
+            .onAppear {
+                setNavigationBarColor()
+            }
+        }
+    }
+}
+
+
+/// Function to customize UINavigationBar color
+func setNavigationBarColor() {
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithOpaqueBackground()
+    appearance.backgroundColor = UIColor(Color(hex: "183646"))
+    
+    appearance.titleTextAttributes = [
+             .foregroundColor: UIColor.white,
+//             .font: UIFont(name: "Inter-Medium", size: DeviceType(rawValue: DEVICE)!.titleFontSize) ?? UIFont.systemFont(ofSize: 20)
+             .font: UIFont(name: "Inter-Medium", size: DeviceType(rawValue: DEVICE)!.title2FontSize) ?? UIFont.systemFont(ofSize: 22)
+         ]
+
+    UINavigationBar.appearance().standardAppearance = appearance
+    UINavigationBar.appearance().scrollEdgeAppearance = appearance
+}
