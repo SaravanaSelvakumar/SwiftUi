@@ -1,0 +1,75 @@
+struct TextUIView : View {
+    
+    var baseView = BaseViewController()
+    
+    var body : some View {
+        
+        Button(action: {
+            viewModel.validateForOtpProfile()
+        }) {
+            Text(buttonText.data)
+                .font(.custom(buttonText.style.getFont, size: buttonText.style.getFontSize))
+                .foregroundStyle(Color(hex: buttonText.style.color))
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(hex: background.style.color))
+                        .stroke(Color(hex: border.style.color), lineWidth: border.style.getSize)
+                )
+                .padding(.top, 30)
+                .padding(.bottom)
+        }
+        
+        BaseViewController.renderTextViewWithData(mobileNumberProp, data: viewModel.phoneNoCC)
+            .underline(pattern: .solid, color: .black)
+        
+        if let property = signInData.thirdDataProperty {
+            baseView.renderLeadingAlignmentText(property)
+                .padding(.top, 28)
+        }
+
+       BaseViewController.renderTextViewWithData(badgeTextProp, data: "\(allScreenLayoutModel.cartCount)")
+                                        .padding(5)
+                                        .background {
+                                            Circle()
+                                                .fill(Color(hex: badgeBgProps.style.color))
+                                        }
+                                        .offset(x: 10, y: -8)
+        
+    }
+}
+
+class BaseViewController: NSObject {
+
+   static func placeHolderImage() -> some View {
+        Image("NoOrdersFound")
+            .resizable()
+            .frame(width: 80, height: 80)
+            .scaledToFill()
+            .clipped()
+    }
+
+    func renderLeadingAlignmentText(_ property: Property) -> some View {
+        Text(property.data)
+            .font(.custom(property.style.getFont, size: property.style.getFontSize))
+            .foregroundColor(Color(hex: property.style.color))
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    static func renderTextView(_ property: Property, text: String = "") -> some View {
+        Text(text != "" ? text : property.data)
+            .foregroundStyle(Color(hex: property.style.color))
+            .font(.custom(property.style.getFont, size: property.style.getFontSize))
+            .multilineTextAlignment(.leading)
+    }
+
+    static func renderTextViewWithData(_ property: Property, data: String) -> some View {
+        Text(data)
+            .foregroundStyle(Color(hex: property.style.color))
+            .font(.custom(property.style.getFont, size: property.style.getFontSize))
+            .multilineTextAlignment(.leading)
+    }
+}
+
