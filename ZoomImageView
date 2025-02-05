@@ -1,0 +1,376 @@
+
+struct SL0082ImageView: View {
+    @Bindable var viewModel: CustomerProductViewModel
+    @Binding var selectedIndex: Int
+    @EnvironmentObject var allScreenLayoutModel: AllScreenUiViewModel
+    @State var url: URL?
+    
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedIndex) {
+                if let data = viewModel.productDetail {
+                    ForEach(Array(data.images.enumerated()), id: \.offset) { index, imageUrl in
+                        NavigationLink(destination: ProductListImage(productsData: data).environmentObject(allScreenLayoutModel)
+                            .navigationBarHidden(true)) {
+                                ZStack {
+                                    if let url = URL(string: imageUrl) {
+                                        WebImage(url: url) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(maxWidth: SCREEN_WIDTH, maxHeight: 250)
+                                        } placeholder: {
+                                            BaseViewController.prgressView()
+                                                .frame(maxWidth: SCREEN_WIDTH, maxHeight: 250)
+                                        }
+                                    }
+                                    else {
+                                        Image("NoOrdersFound")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(height: 250)
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .frame(height: 250)
+            .padding(.vertical)
+            
+            if let images = viewModel.productDetail?.images ,
+               let imageProp = viewModel.productDetailsUiModel.productImageProperty,
+               let slider = imageProp.firstProperty,
+               let selectedProp = slider.firstProperty,
+               let unSelectedProp = slider.secondProperty {
+                HStack {
+                    ForEach(images.indices, id: \.self) { index in
+                        if selectedIndex == index {
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Color(hex: selectedProp.style.color))
+                                .frame(width: 15, height: 8)
+                        } else {
+                            Circle()
+                                .fill(Color(hex: unSelectedProp.style.color))
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+                }
+                .padding(.bottom, 3)
+            }
+        }
+    }
+}
+
+
+
+//
+//  Untitled.swift
+//  pointerup-customer
+//
+//  Created by apzzo on 12/12/24.
+//
+
+import SwiftUI
+import SDWebImageSwiftUI
+
+struct ProductListImage: View {
+    @Bindable var productsData: ProductDetailData
+    @State private var currentPage = 0
+    @Environment(\.presentationMode) var presentationMode
+    var device = DeviceType(rawValue: DEVICE)
+    
+    var body: some View {
+        VStack {
+            // Dismiss Button
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "xmark")
+                        .resizable()
+                        .frame(width: SCREEN_WIDTH * 0.04, height: SCREEN_HEIGHT * 0.02)
+                        .foregroundColor(Color(hex: "FFFFFF"))
+//                        .foregroundColor(Color(hex: "000000"))
+                }
+                Spacer()
+            }
+            .padding([.top, .leading], 20)
+            
+            /// TabView to display the currently selected image
+            
+            TabView(selection: $currentPage) {
+                ForEach(productsData.images.indices, id: \.self) { index in
+                    if let url = URL(string: productsData.images[index]) {
+                        SwiftUIImageViewer(url: url)
+                    } else {
+                        Image("NoOrdersFound")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 300, height: 300)
+                            .tag(index)
+                    }
+                }
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
+            .padding(.top, 10)
+            .padding(.bottom, 10)
+            
+            /// Thumbnails to select images
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 25) {
+                        Spacer()
+                        ForEach(productsData.images.indices, id: \.self) { index in
+                            Button(action: {
+                                currentPage = index
+                            }) {
+                                if let url = URL(string: productsData.images[index]) {
+                                    
+                                    WebImage(url: url) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 60, height: 60)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(currentPage == index ? Color(hex: "28AA7E") : Color.clear, lineWidth: 2)
+                                            )
+                                    } placeholder: {
+                                        Image("NoOrdersFound")
+                                            .resizable()
+                                            .frame(width: 60, height: 60)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(currentPage == index ? Color(hex: "28AA7E") : Color.clear, lineWidth: 2)
+                                            )
+                                    }
+                                    .cornerRadius(6)
+                                } else {
+                                    Image("NoOrdersFound")
+                                        .resizable()
+                                        .frame(width: 60, height: 60)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(currentPage == index ? Color(hex: "28AA7E") : Color.clear, lineWidth: 2)
+                                        )
+                                        .cornerRadius(6)
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                }
+                .onChange(of: currentPage) {
+                    withAnimation(.smooth(duration: 1.0)) {
+                        proxy.scrollTo(currentPage, anchor: .bottom)
+                    }
+                }
+            }
+            .padding()
+            .padding(.bottom)
+            .background(
+                Color(hex: "D0D0D0").opacity(0.6)
+                    .cornerRadius(20, corners: [.topLeft, .topRight])
+                    .edgesIgnoringSafeArea(.bottom)
+            )
+        }
+        .navigationBarBackButtonHidden()
+    }
+}
+
+struct ZoomableView<Content: View>: View {
+    @GestureState private var magnifyBy = CGFloat(1.0)
+    @GestureState private var dragOffset = CGSize.zero
+    @State private var finalScale = CGFloat(1.0)
+    @State private var currentScale = CGFloat(1.0)
+    @State private var position = CGSize.zero
+
+    let minScale: CGFloat = 1.0
+    let maxScale: CGFloat = 5.0
+    let doubleTapScale: CGFloat = 2.0
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .scaleEffect(max(min(currentScale * finalScale, maxScale), minScale))
+            .offset(x: position.width + dragOffset.width, y: position.height + dragOffset.height)
+            .gesture(
+                SimultaneousGesture(
+                    MagnificationGesture()
+                        .updating($magnifyBy) { currentState, gestureState, _ in
+                            gestureState = currentState
+                        }
+                        .onChanged { scale in
+                            currentScale = scale
+                        }
+                        .onEnded { scale in
+                            finalScale = max(min(finalScale * scale, maxScale), minScale)
+                            currentScale = 1.0
+                        },
+                    DragGesture()
+                        .updating($dragOffset) { value, state, _ in
+                            state = value.translation
+                        }
+                        .onEnded { value in
+                            let newPosition = CGSize(
+                                width: position.width + value.translation.width,
+                                height: position.height + value.translation.height
+                            )
+
+                            // Clamp to ensure the image doesn't go too far out of view
+                            let clampedPosition = clampPosition(newPosition: newPosition, scale: finalScale)
+                            position = clampedPosition
+                        }
+                )
+            )
+            .gesture(
+                TapGesture(count: 2)
+                    .onEnded {
+                        withAnimation(.easeInOut) {
+                            if finalScale > minScale {
+                                // Reset to minimum scale and position
+                                finalScale = minScale
+                                position = .zero
+                            } else {
+                                // Zoom in
+                                finalScale = doubleTapScale
+                            }
+                        }
+                    }
+            )
+            .animation(.easeInOut, value: finalScale)
+    }
+
+    private func clampPosition(newPosition: CGSize, scale: CGFloat) -> CGSize {
+        let imageSize = CGSize(width: 300, height: 300)
+        let maxOffsetX = (imageSize.width * (scale - 1)) / 2
+        let maxOffsetY = (imageSize.height * (scale - 1)) / 2
+
+        return CGSize(
+            width: max(-maxOffsetX, min(maxOffsetX, newPosition.width)),
+            height: max(-maxOffsetY, min(maxOffsetY, newPosition.height))
+        )
+    }
+}
+
+struct SwiftUIImageViewer: View {
+
+    let url: URL
+
+    @State private var scale: CGFloat = 1
+    @State private var lastScale: CGFloat = 1
+    @State private var offset: CGPoint = .zero
+    @State private var lastTranslation: CGSize = .zero
+
+    public var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                WebImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(-10)
+                        .frame(maxWidth: SCREEN_WIDTH, maxHeight: 500)
+                        .scaleEffect(scale)
+                        .offset(x: offset.x, y: offset.y)
+                        .gesture(scale > 1 ? makeDragGesture(size: proxy.size) : nil)
+                        .gesture(makeMagnificationGesture(size: proxy.size))
+                    
+                } placeholder: {
+                    Image("NoOrdersFound")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 300, height: 300)
+                        .scaleEffect(scale)
+                        .offset(x: offset.x, y: offset.y)
+                        .gesture(scale > 1 ? makeDragGesture(size: proxy.size) : nil)
+                        .gesture(makeMagnificationGesture(size: proxy.size))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .edgesIgnoringSafeArea(.all)
+        }
+        .simultaneousGesture(TapGesture(count: 2).onEnded {
+            withAnimation {
+                scale = scale > 1 ? 1 : 2
+                offset = .zero
+            }
+        })
+        .onDisappear {
+            withAnimation {
+                scale = 1
+                offset = .zero
+            }
+        }
+    }
+
+    private func makeMagnificationGesture(size: CGSize) -> some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                let delta = value / lastScale
+                lastScale = value
+
+                if abs(1 - delta) > 0.01 {
+                    scale *= delta
+                }
+            }
+            .onEnded { _ in
+                lastScale = 1
+                if scale < 1 {
+                    withAnimation {
+                        scale = 1
+                    }
+                }
+                adjustMaxOffset(size: size)
+            }
+    }
+
+    private func makeDragGesture(size: CGSize) -> some Gesture {
+        DragGesture()
+            .onChanged { value in
+                let diff = CGPoint(
+                    x: value.translation.width - lastTranslation.width,
+                    y: value.translation.height - lastTranslation.height
+                )
+                offset = .init(x: offset.x + diff.x, y: offset.y + diff.y)
+                lastTranslation = value.translation
+            }
+            .onEnded { _ in
+                adjustMaxOffset(size: size)
+            }
+    }
+
+    private func adjustMaxOffset(size: CGSize) {
+        let maxOffsetX = (size.width * (scale - 1)) / 2
+        let maxOffsetY = (size.height * (scale - 1)) / 2
+
+        var newOffsetX = offset.x
+        var newOffsetY = offset.y
+
+        if abs(newOffsetX) > maxOffsetX {
+            newOffsetX = maxOffsetX * (abs(newOffsetX) / newOffsetX)
+        }
+        if abs(newOffsetY) > maxOffsetY {
+            newOffsetY = maxOffsetY * (abs(newOffsetY) / newOffsetY)
+        }
+
+        let newOffset = CGPoint(x: newOffsetX, y: newOffsetY)
+        if newOffset != offset {
+            withAnimation {
+                offset = newOffset
+            }
+        }
+        self.lastTranslation = .zero
+    }
+}
+
+
+
+
