@@ -1,0 +1,33 @@
+struct ContentView: View {
+    enum AppState {
+        case loading
+        case loaded
+        case error(ErrorType)
+        
+        enum ErrorType {
+            case networkError
+            case serverError
+            case unknown
+        }
+    }
+
+    let state: AppState = .error(.networkError)
+
+    var body: some View {
+        switch state {
+        case .loading:
+            ProgressView()
+        case .loaded:
+            Text("Content Loaded")
+        case .error(let errorType):
+            switch errorType {
+            case .networkError:
+                Text("Network Error! Please try again.")
+            case .serverError:
+                Text("Server Error! Please try later.")
+            case .unknown:
+                Text("Unknown Error occurred.")
+            }
+        }
+    }
+}
