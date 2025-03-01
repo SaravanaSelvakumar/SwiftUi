@@ -1,0 +1,446 @@
+import SwiftUI
+
+class NavigationManager: ObservableObject {
+    @Published var navigationPath = NavigationPath()
+    @Published var tabIndex = 0
+    @Published var phoneNo = ""
+    @Published var email = ""
+    @Published var countryCode = "+91"
+    @Published var orderItemId = ""
+    @Published var isFromCart = false
+    @Published var cartAddressId = ""
+    @Published var address = Address()
+    
+    var mobileNumber: String {
+        return phoneNo.replacingOccurrences(of: countryCode, with: "")
+    }
+    
+    func navigate(to screen: NavigationObject) {
+        navigationPath.append(screen)
+    }
+
+    func puNavigationController(redirect: Redirect) {
+        if redirect.getRedirectionType != .NO_REDIRECTION {
+            let obj = NavigationObject(route: getRouteEnum(for: redirect), redirection: redirect)
+            withAnimation(.smooth(duration: 0.5)) {
+                navigate(to: obj)
+            }
+        }
+    }
+    
+    func popView(count: Int = 1) {
+        navigationPath.removeLast(count)
+    }
+    
+    func popToRoot() {
+        navigationPath = NavigationPath()
+    }
+    
+    func getRouteEnum(for redirect: Redirect) -> Route {
+        let redirectionType = redirect.getRedirectionType
+        
+        switch redirectionType {
+        case .COLLECTION:
+            return .PRODUCTLIST
+            
+        case .PRODUCT:
+            return .PRODUCTDETAILS
+            
+        case .WEBSITE_URL:
+            return .WEBSITE
+            
+        case .PAGES:
+            let screenType = ScreenName(rawValue: redirect.screenName)
+            switch screenType {
+            case .SL_0035, .SL_0036, .SL_0037, .SL_0038, .SL_0116:
+                return .CATEGORY
+                
+            case .SL_0068, .SL_0071, .SL_0072:
+                return .SETTINGS
+                
+            case .SL_0088, .SL_0089, .SL_0113, .SL_0091:
+                return .ORDERLIST
+                
+            case .SL_0092, .SL_0093:
+                return .ORDERDETAILS
+                
+            case .SL_0056, .SL_0057:
+                return .NOTIFICATION
+                
+            case .SL_0001, .SL_0002, .SL_0003, .SL_0004, .SL_0005, .SL_0006, .SL_0110, .SL_0111:
+                return .LOGIN
+                
+            case .SL_0007, .SL_0008, .SL_0009, .SL_0010, .SL_0011, .SL_0012:
+                return .SIGNUP
+                
+            case .SL_0013, .SL_0017:
+                return .FORGETPASSWORD
+              
+            case .SL_0112:
+                return .OTP
+                
+            case .SL_0115, .SL_0082:
+                return .PRODUCTDETAILS
+                
+            case .SL_0041, .SL_0045:
+                return .FILTER
+                
+            case .SL_0047, .SL_0048:
+                return .SORT
+           
+            case .SL_0059, .SL_0062:
+                return .ADDRESSLIST
+                
+            case .SL_0064:
+                return .ADDRESSDETAILS
+                
+            case .SL_0086:
+                return .SEARCH
+                
+            case .SL_0050, .SL_0053, .SL_0118:
+                return .PROFILE
+                
+            case .SL_0074:
+                return .ADDRATING
+                
+            case .SL_0114, .SL_0097, .SL_0098:
+                return .CART
+                
+            default:
+                return .NONE
+            }
+        case .NO_REDIRECTION:
+            return .NONE
+        }
+    }
+}
+
+enum Route: Hashable {
+    case SEARCH
+    case PRODUCTDETAILS
+    case PRODUCTLIST
+    case CATEGORY
+    case SETTINGS
+    case ORDERLIST
+    case ORDERDETAILS
+    case NOTIFICATION
+    case FILTER
+    case SORT
+    case LOGIN
+    case SIGNUP
+    case OTP
+    case FORGETPASSWORD
+    case ADDRESSLIST
+    case ADDRESSDETAILS
+    case PROFILE
+    case ADDRATING
+    case WEBSITE
+    case CART
+    case NONE
+}
+
+enum RedirectionType: String {
+   case PAGES
+   case PRODUCT
+   case WEBSITE_URL
+   case COLLECTION
+   case NO_REDIRECTION
+}
+
+enum ScreenName: String {
+  case SL_0001 = "SL-0001"
+    case SL_0002 = "SL-0002"
+    case SL_0003 = "SL-0003"
+    case SL_0004 = "SL-0004"
+    case SL_0005 = "SL-0005"
+    case SL_0006 = "SL-0006"
+    case SL_0007 = "SL-0007"
+    case SL_0008 = "SL-0008"
+    case SL_0009 = "SL-0009"
+    case SL_0010 = "SL-0010"
+    case SL_0011 = "SL-0011"
+    case SL_0012 = "SL-0012"
+    case SL_0013 = "SL-0013"
+    case SL_0014 = "SL-0014"
+    case SL_0015 = "SL-0015"
+    case SL_0016 = "SL-0016"
+    case SL_0017 = "SL-0017"
+    case SL_0018 = "SL-0018"
+
+}
+
+class NavigationObject: Hashable {
+    var route: Route
+    var redirection: Redirect
+
+    init(route: Route, redirection: Redirect = Redirect()) {
+        self.route = route
+        self.redirection = redirection
+    }
+
+    static func == (lhs: NavigationObject, rhs: NavigationObject) -> Bool {
+        lhs.route == rhs.route && lhs.redirection == rhs.redirection
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(route)
+        hasher.combine(redirection)
+    }
+}
+
+
+import SwiftUI
+
+struct ContentView: View {
+    @StateObject var viewModel = AllScreenUiViewModel()
+    @EnvironmentObject var alertViewModel: AlertViewModel
+    @StateObject var homeViewModel = CustomerHomeViewModel()
+    @EnvironmentObject var manager: NavigationManager
+    @State var storeInformation: StoreInformation?
+
+    var body: some View {
+        NavigationStack(path: $manager.navigationPath) {
+            if let version = storeInformation?.version ,
+               let store_id = storeInformation?.store_id {
+                CustomerSplashScreen(versionId: version, storeId: store_id)
+                    .environmentObject(viewModel)
+                    .environmentObject(homeViewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(manager)
+                    .onAppear {
+                        CustomUserDefaults.SelectedStoreId = storeInformation?.store_id
+                    }
+                    .offlineAlert()
+                    .navigationDestination(for: NavigationObject.self, destination: { navigation in
+                        let route = navigation.route
+                        let layout = viewModel.getScreenLayout(for: navigation.redirection.screenName)
+                        switch route {
+                        case .SEARCH:
+                            SearchScreenManager(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                        case .PRODUCTDETAILS:
+                            ProductDetailsScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                        case .PRODUCTLIST:
+                            SL0077View(categoriesId: navigation.redirection.ids.isEmpty ? [navigation.redirection.data] : navigation.redirection.ids, title: navigation.redirection.title)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                        case .CATEGORY:
+                            SL0035View(redirection: navigation.redirection, title: navigation.redirection.title)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                        case .SETTINGS:
+                            SettingsScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                        case .ORDERLIST:
+                            OrderListScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .ORDERDETAILS:
+                            OrderDetailsScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .NOTIFICATION:
+                            NotificationScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                        case .PROFILE:
+                            ProfileManager(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .WEBSITE:
+                            Webpage(data: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .ADDRESSLIST:
+                            AddressListManager(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .ADDRESSDETAILS:
+                            AddAddressScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .LOGIN:
+                            LoginScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .SIGNUP:
+                            SignUpScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .FORGETPASSWORD:
+                            ForgotPasswordScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .OTP:
+                            SL0112View()
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .CART:
+                            CartScreen(redirection: navigation.redirection)
+                                .environmentObject(manager)
+                                .environmentObject(viewModel)
+                                .environmentObject(alertViewModel)
+                                .buttonStyle(.plain)
+                            
+                        case .NONE:
+                            EmptyView()
+                        default:
+                            EmptyView()
+                        }
+                        
+                    })
+            }
+        }
+        .onAppear {
+            getStoreInformation()
+        }
+    }
+    
+    private func getStoreInformation() {
+        if let url = Bundle.main.url(forResource: "store_information_json", withExtension: "json") {
+            do {
+                let data = try Data(contentsOf: url)
+                let decoder = JSONDecoder()
+                let storeInformation = try decoder.decode(StoreInformation.self, from: data)
+                
+                self.storeInformation = storeInformation
+            } catch {
+                print("Error reading JSON: \(error)")
+            }
+        } else {
+            print("JSON file not found")
+        }
+    }
+}
+
+struct SL0001View : View {
+    @State var viewModel = LoginViewModel()
+    @EnvironmentObject var alertViewModel: AlertViewModel
+    @EnvironmentObject var allScreenViewModel: AllScreenUiViewModel
+    @EnvironmentObject var navigation: NavigationManager
+
+
+var body : some View {
+
+
+PUBackButtonView(color: title.style.color) {
+                            navigation.popView()
+                        }
+
+PUTextButtonView(property: buttonProperty) {
+                                    navigation.puNavigationController(redirect: redirectProperty.redirect)
+                                }
+
+let obj = NavigationObject(route: .LOGIN)
+                        navigation.navigate(to: obj)
+
+}
+}
+
+struct ForgotPasswordScreen: View {
+    let redirection: Redirect
+    @EnvironmentObject var viewModel: AllScreenUiViewModel
+    @EnvironmentObject var alertViewModel: AlertViewModel
+    @EnvironmentObject var navigation: NavigationManager
+    @State var screenName = ""
+    
+    var body: some View {
+        ZStack {
+            let screenName = ScreenName(rawValue: screenName)
+            
+            switch screenName {
+            case .SL_0013:
+                SL0013View()
+                    .environmentObject(viewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(navigation)
+            case .SL_0014:
+                SL0014View()
+                    .environmentObject(viewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(navigation)
+            case .SL_0015:
+                SL0013View()
+                    .environmentObject(viewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(navigation)
+            case .SL_0016:
+                SL0013View()
+                    .environmentObject(viewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(navigation)
+            case .SL_0017:
+                SL0017View()
+                    .environmentObject(viewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(navigation)
+            case .SL_0018:
+                SL0017View()
+                    .environmentObject(viewModel)
+                    .environmentObject(alertViewModel)
+                    .environmentObject(navigation)
+            default:
+                EmptyView()
+            }
+        }
+        .onAppear {
+            screenName = redirection.screenName.isEmpty ? viewModel.getScreenUIComponent(for: "FP-SCR").name : redirection.screenName
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
