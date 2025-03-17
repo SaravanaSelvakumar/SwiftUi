@@ -1,0 +1,80 @@
+import UIKit
+import IQKeyboardManagerSwift
+import SwiftUI
+import FirebaseCore
+import FirebaseMessaging
+
+@main
+struct pointerup_adminApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject var alertViewModel = AlertViewModel()
+    @StateObject var allScreenLayoutModel = AllScreenUiViewModel()
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .buttonStyle(.plain)
+                .environmentObject(alertViewModel)
+                .environmentObject(allScreenLayoutModel)
+                .preferredColorScheme(.light)
+        }
+    }
+}
+
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
+    
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        /// Set the status bar style to light content
+        UIApplication.shared.windows.first?.overrideUserInterfaceStyle = .light
+        requestPushNotificationPermission(application: application)
+        FirebaseApp.configure()
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+        /// Configure IQKeyboardManager settings
+        keyboardManagerConfiguration()
+        
+        return true
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.badge, .sound, .banner])
+    }
+    
+    func requestPushNotificationPermission(application: UIApplication) {
+        UNUserNotificationCenter.current().delegate = self
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        UNUserNotificationCenter.current().requestAuthorization(
+            options: authOptions,
+            completionHandler: { _, _ in })
+        application.registerForRemoteNotifications()
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        print("APNs Device Token: \(deviceToken)")
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let token = fcmToken else { return }
+        print("FCM Token: \(token)")
+    }
+    
+    private func applicationWillTerminate(_ notification: Notification) {
+        /// Insert code here to tear down your application if needed
+    }
+    
+    
+    // MARK: - Keyboard Manager Initialization
+    
+    func keyboardManagerConfiguration() {
+        IQKeyboardManager.shared.enable = true
+        IQKeyboardManager.shared.layoutIfNeededOnUpdate = false
+        IQKeyboardManager.shared.toolbarConfiguration.previousNextDisplayMode = .alwaysHide
+        
+        IQKeyboardManager.shared.resignOnTouchOutside = true
+        IQKeyboardManager.shared.enableAutoToolbar = false
+        //        IQKeyboardManager.shared.keyboardDistance = 20
+    }
+    
+}
