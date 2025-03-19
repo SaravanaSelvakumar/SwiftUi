@@ -1,0 +1,114 @@
+import NotificationCenter
+
+extension Notification.Name {
+    static var createMessage = Notification.Name("createMessage")
+    static var newMessage = Notification.Name("newMessage")
+    static var readAllMessage = Notification.Name("readAllMessage")
+    static var editMessage = Notification.Name("editMessage")
+    static var allOnlineUsers = Notification.Name("allOnlineUsers")
+    static var onlineUser = Notification.Name("onlineUser")
+    static var startTyping = Notification.Name("startTyping")
+    static var stopTyping = Notification.Name("stopTyping")
+    static var layoutUpdate = Notification.Name("layoutUpdate")
+}
+
+
+import Foundation
+import NotificationCenter
+
+class BaseViewModel: NSObject {
+    func addObserver() {
+        NotificationCenter.default.addObserver(self, selector: #selector(didCreateMessage), name: .createMessage, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didReceiveNewMessage), name: .newMessage, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didCreateMessage), name: .editMessage, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didAllUserOnlineStatusChange), name: .allOnlineUsers, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didOnlineStatusChange), name: .onlineUser, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didStartTyping), name: .startTyping, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didStopTyping), name: .stopTyping, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didLayoutUpdate), name: .layoutUpdate, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didBecomeActiveNotification), name: UIApplication.didBecomeActiveNotification, object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func didCreateMessage(notification: Notification) {
+        print("didCreateMessage")
+    }
+    
+    @objc func didReceiveNewMessage(notification: Notification) {
+        print("didReceiveNewMessage")
+    }
+    
+    @objc func didBecomeActiveNotification(notification: Notification) {
+        print("didBecomeActiveNotification")
+    }
+    
+    @objc func didAllUserOnlineStatusChange(notification: Notification) {
+        print("didAllUserOnlineStatusChange")
+    }
+    
+    @objc func didOnlineStatusChange(notification: Notification) {
+        print("didAllUserOnlineStatusChange")
+    }
+    
+    @objc func didStartTyping(notification: Notification) {
+        print("didStartTyping")
+    }
+    
+    @objc func didStopTyping(notification: Notification) {
+        print("didStopTyping")
+    }
+    
+    @objc func didLayoutUpdate(notification: Notification) {
+        print("didLayoutUpdate")
+    }
+}
+
+class Message: NSObject, Mappable {
+    var id = ""
+    var chatRoomId = ""
+
+    required convenience init?(map: Map) {
+        self.init()
+    }
+    
+    override init() {}
+    
+    func mapping(map: Map) {
+        id <- map["id"]
+        chatRoomId <- map["chatRoomId"]
+
+}
+}
+
+   override func didCreateMessage(notification: Notification) {
+        refreshMessage()
+    }
+
+func createMessage() {
+        let message = Message()
+        message.chatRoomId = selectedChat.id
+        message.senderId = CustomUserDefaults.UserId ?? ""
+        message.message = newMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        message.tempMessageId = UUID().uuidString
+        message.storeOwnerId = selectedChat.storeOwnerId
+        message.customerId = selectedChat.customerId
+        message.senderRole = Utils.user.role
+        message.messageType = getMessageType()
+        let type = message.getMessageType
+        switch type {
+        case .IMAGE, .VIDEO:
+            Utils.uploadMedia(message: message, files: selectedImageUrls, completion: {urls in
+                message.imageUrls = urls
+                Utils.sendSocketMessage(message: message)
+                self.resetMessageView()
+            })
+        case .TEXT, .COMMENT:
+            Utils.sendSocketMessage(message: message)
+            resetMessageView()
+        default:
+            return
+        }
+    }
